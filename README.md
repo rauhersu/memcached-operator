@@ -27,7 +27,9 @@ Edit image, see this diff: t.ly/lafi
 Generate image and install in cluster, notice 'deploy' Makefile target:
 
 # I think the namespace must be set first: $ ksns myproject
-# Notice docker build is done according to 'bundle.Dockerfile'
+# Notice docker-* only builds and pushes the image according to according to
+# 'bundle.Dockerfile', the 'deploy' target actually deploys the image in the
+# cluster
 $ IMAGE_TAG_BASE=docker.io/rauherna/memcached-operator VERSION=0.0.2 make docker-build docker-push deploy
 
 ** Install in cluster (bundle):
@@ -75,10 +77,16 @@ $ kubectl patch memcached memcached-sample -p '{"spec":{"size": 5}}' --type=merg
 
 * Out of cluster
 
+# deletes the CR
 $ kubectl delete -f config/samples/cache_v1alpha1_memcached.yaml
+# deletes the CRD
 $ make uninstall
 
 * In cluster
 
+# deletes the CR
 $ kubectl delete -f config/samples/cache_v1alpha1_memcached.yaml
+# deletes the CRD
+$ make uninstall
+# deletes the controller
 $ make undeploy
