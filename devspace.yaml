@@ -17,8 +17,16 @@ deployments:
 # `dev` only applies when you run `devspace dev`
 dev:
   # `dev.sync` configures a file sync between our Pods in k8s and your local project files
+  ports:
+  # remote debug through delve on 40000
+  - imageSelector: ${IMAGE}
+    forward:
+    - port: 40000
+      bindAddress: ""
+
   sync:
   - imageSelector: ${IMAGE} # Select the Pod that runs our `${IMAGE}`
+    containerPath: /memcached-operator
     excludePaths:
     - .git/
     uploadExcludePaths:
@@ -28,11 +36,12 @@ dev:
   # `dev.terminal` tells DevSpace to open a terminal as a last step during `devspace dev`
   terminal:
     imageSelector: ${IMAGE} # Select the Pod that runs our `${IMAGE}`
+    workDir: /memcached-operator
     # With this optional `command` we can tell DevSpace to run a script when opening the terminal
     # This is often useful to display help info for new users or perform initial tasks (e.g. installing dependencies)
     # DevSpace has generated an example ./devspace_start.sh file in your local project - Feel free to customize it!
     command:
-    - ./devspace_start.sh
+    - ./devspace_debug.sh
 
   # Since our Helm charts and manifests deployments are often optimized for production,
   # DevSpace let's you swap out Pods dynamically to get a better dev environment
@@ -46,15 +55,21 @@ dev:
     # Using `sleep 9999999` as PID 1 (instead of the regular ENTRYPOINT), allows you to start the application manually
     patches:
     - op: replace
-      path: spec.containers[0].command
+      path: spec.containers[1].command
       value:
       - sleep
     - op: replace
-      path: spec.containers[0].args
+      path: spec.containers[1].args
       value:
       - "9999999"
     - op: remove
-      path: spec.containers[0].securityContext
+      path: spec.containers[1].livenessProbe
+    - op: remove
+      path: spec.containers[1].readinessProbe
+    - op: remove
+      path: spec.securityContext
+    - op: remove
+      path: spec.containers[1].resources
 
 # `profiles` lets you modify the config above for different environments (e.g. dev vs production)
 profiles:
@@ -67,3 +82,7 @@ profiles:
       app:
         image: ${IMAGE} # Use the value of our `${IMAGE}` variable here (see vars above)
         dockerfile: ./Dockerfile
+# commands:
+#   This command builds an static manager file
+# - name: operator-build-debug
+#   command: CGO_ENABLED=0 GOARCH=amd64 GOOS=linux go build  -gcflags=all="-N -l" -ldflags "-extldflags '-static'" -o bin/manager
