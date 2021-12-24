@@ -69,7 +69,7 @@ dev:
     - op: remove
       path: spec.securityContext
     - op: remove
-      path: spec.containers[1].resources
+      path: spec.containers[1].resources.limits
 
 # `profiles` lets you modify the config above for different environments (e.g. dev vs production)
 profiles:
